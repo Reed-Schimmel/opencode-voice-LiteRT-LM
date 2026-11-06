@@ -31,30 +31,50 @@ TUI-only plugin, so the server-side `opencode.json` cannot load it). You must
 configure at least `endpoint` and `model`:
 
 > [!NOTE]
-> **Clobbering default keybinds.** This plugin uses `ctrl+r` for voice
-> recording, but OpenCode assigns it to session rename by default. Session
-> rename is not used frequently and is still accessible via `/rename`, so we
-> clobber the factory default to let the plugin use `ctrl+r` properly. See
-> the `keybinds` section in the config below.
+> **Shortcut conflicts.** The upstream defaults overlap OpenCode's session rename
+> (`ctrl+r`), redo (`<leader>r`), and status (`<leader>s`). Set **plugin-level**
+> `options.keybinds` as shown below to avoid those conflicts without disabling
+> built-in commands. OpenCode V2 ignores unknown command IDs in the top-level
+> `cli.json` keybind map; plugin command overrides belong inside plugin options.
 
 ```json
 {
   "$schema": "https://opencode.ai/v2/cli.json",
-  "keybinds": {
-    "session_rename": "none"
-  },
   "plugins": [
     {
       "package": "@renjfk/opencode-voice",
       "options": {
         "endpoint": "https://api.anthropic.com/v1",
         "model": "claude-haiku-4-5",
-        "apiKeyEnv": "ANTHROPIC_API_KEY"
+        "apiKeyEnv": "ANTHROPIC_API_KEY",
+        "keybinds": {
+          "stt.record": "<leader>k",
+          "stt.submit": "none",
+          "tts.speak-last": "<leader>j"
+        }
       }
     }
   ]
 }
 ```
+
+### Plugin shortcut overrides
+
+`options.keybinds` maps plugin command IDs to OpenCode binding values. An omitted
+ID keeps its upstream default. Use `"none"` or `false` to disable a shortcut while
+retaining its slash command and command-palette entry. Strings, arrays, and binding
+objects are passed through to OpenCode's keymap.
+
+The example above records/reviews with **Ctrl+X, then K**, reads the latest response
+with **Ctrl+X, then J**, and disables the direct-submit shortcut. `/stt-submit`
+remains available for explicitly stopping and sending an active recording without
+review. Auto-speech toggle (`<leader>v`) and stop-speech (`escape`) are unchanged;
+Escape still falls through when no speech is playing.
+
+`<leader>` uses your existing OpenCode leader (Ctrl+X by default); this plugin does
+not change it or disable rename, redo, or status. Run `/reload` after merging valid
+configuration, then test the shortcuts in the actual TUI. Registration tests alone
+do not prove terminal keyboard dispatch.
 
 ### Refresh cached plugin after updates
 

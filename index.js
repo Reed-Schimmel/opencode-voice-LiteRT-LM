@@ -234,12 +234,15 @@ export function createApi(context, kv) {
   };
 }
 
-function toCommand(command) {
+export function toCommand(command, keybinds = {}) {
+  const binding = Object.hasOwn(keybinds ?? {}, command.value)
+    ? keybinds[command.value]
+    : command.keybind;
   return {
     id: command.value,
     title: command.title,
     description: command.description,
-    bind: command.keybind,
+    bind: binding === "none" ? false : binding,
     palette: true,
     slash: command.slash,
     run: () => command.onSelect(),
@@ -268,7 +271,9 @@ export default Plugin.define({
 
     context.keymap.layer(() => ({
       mode: "global",
-      commands: [...sttCommands, ...ttsCommands].map(toCommand),
+      commands: [...sttCommands, ...ttsCommands].map((command) =>
+        toCommand(command, options?.keybinds),
+      ),
     }));
 
     // The keymap layer is removed with the plugin; data listeners are not
