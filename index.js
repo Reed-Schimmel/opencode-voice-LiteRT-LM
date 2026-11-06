@@ -38,7 +38,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import { Plugin } from "@opencode/plugin/tui";
-import { registerSTT } from "./lib/stt.js";
+import { disposeRecording, registerSTT } from "./lib/stt.js";
 import { registerTTS } from "./lib/tts.js";
 import { createClient } from "./lib/llm-client.js";
 import { createLogger } from "./lib/logger.js";
@@ -234,12 +234,15 @@ export function createApi(context, kv) {
   };
 }
 
-function toCommand(command) {
+export function toCommand(command, keybinds = {}) {
+  const binding = Object.hasOwn(keybinds ?? {}, command.value)
+    ? keybinds[command.value]
+    : command.keybind;
   return {
     id: command.value,
     title: command.title,
     description: command.description,
-    bind: command.keybind,
+    bind: binding === "none" ? false : binding,
     palette: true,
     slash: command.slash,
     run: () => command.onSelect(),
@@ -264,15 +267,24 @@ export default Plugin.define({
     const api = createApi(context, kv);
 
     const sttCommands = registerSTT(api, kv, complete, prompts, options, logger);
-    const ttsCommands = registerTTS(api, kv, complete, prompts, logger);
+    const speechCleanups = [];
+    const ttsCommands = registerTTS(api, kv, complete, prompts, logger, options, (cleanup) =>
+      speechCleanups.push(cleanup),
+    );
 
     context.keymap.layer(() => ({
       mode: "global",
-      commands: [...sttCommands, ...ttsCommands].map(toCommand),
+      commands: [...sttCommands, ...ttsCommands].map((command) =>
+        toCommand(command, options?.keybinds),
+      ),
     }));
 
     // The keymap layer is removed with the plugin; data listeners are not
     // scoped by the host, so they are detached here (hot reloads, TUI close).
-    return () => api.event.dispose();
+    return () => {
+      disposeRecording(logger);
+      for (const cleanup of speechCleanups) cleanup();
+      api.event.dispose();
+    };
   },
 });
