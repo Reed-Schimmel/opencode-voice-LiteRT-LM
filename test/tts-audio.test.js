@@ -4,7 +4,7 @@ import { PassThrough } from "node:stream";
 import test from "node:test";
 
 import { buildPlaybackCommand, createPiperPlayer } from "../lib/tts-audio.js";
-import { registerTTS } from "../lib/tts.js";
+import { createSpeechNormalizer, registerTTS } from "../lib/tts.js";
 
 function fakeChildren() {
   const children = [];
@@ -157,6 +157,37 @@ test("empty speech does not spawn subprocesses", async () => {
     },
   });
   assert.deepEqual(await player.speak("  ", "/fixture/voice.onnx"), {});
+});
+
+test("ttsNormalize false bypasses the LLM and preserves the original text", async () => {
+  const normalize = createSpeechNormalizer(
+    () => {
+      throw new Error("LLM must not be called");
+    },
+    { ttsNormalize: false },
+  );
+  const text = "**Raw Markdown** and `code` stay unchanged.";
+  assert.deepEqual(await normalize(text, "unused prompt"), { text });
+});
+
+test("ttsNormalize true and omitted settings preserve the upstream normalization request", async () => {
+  for (const options of [undefined, {}, { ttsNormalize: true }]) {
+    const requests = [];
+    const normalize = createSpeechNormalizer(async (request) => {
+      requests.push(request);
+      return { text: "normalized" };
+    }, options);
+    assert.deepEqual(await normalize("raw", "system prompt"), { text: "normalized" });
+    assert.deepEqual(requests, [
+      {
+        system: "system prompt",
+        prompt: "Convert for text-to-speech:\n\nraw",
+        config: { maxTokens: 4096 },
+      },
+    ]);
+  }
+  assert.throws(() => createSpeechNormalizer(() => {}, { ttsNormalize: "false" }), /boolean/);
+  assert.throws(() => createSpeechNormalizer(() => {}, { ttsNormalize: null }), /boolean/);
 });
 
 test("manual command awaits normalization and uses the actual manual speech prompt", async () => {

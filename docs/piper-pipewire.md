@@ -46,7 +46,8 @@ Merge these fields into the existing plugin `options` in `cli.json`:
 ```json
 {
   "ttsPlayer": "pipewire",
-  "ttsVolume": 0.6
+  "ttsVolume": 0.6,
+  "ttsNormalize": true
 }
 ```
 
@@ -54,6 +55,19 @@ Merge these fields into the existing plugin `options` in `cli.json`:
 stream. It does not modify the system sink volume. Speech normalization uses the
 existing plugin `endpoint`/`model`; for this setup that is the local LiteRT-LM
 Gemma service. Piper itself also runs locally on CPU.
+
+`ttsNormalize` is a simple **on/off** switch, applying to manual and automatic
+assistant-response speech:
+
+- `true` (default): use the existing LLM speech-normalization step before Piper.
+- `false`: skip that LLM call and send the response directly to Piper. This reduces
+  startup latency, but Markdown/code formatting is not rewritten into spoken prose
+  and automatic mode does not get its usual LLM summary.
+
+The LLM normalization step was already present upstream; this fork only makes it
+optional. This switch does not toggle automatic speech and does not affect Gemma
+audio transcription or the separate `sttNormalize` dictation-cleanup setting.
+Use a JSON boolean, not the string `"false"`, and `/reload` after changing options.
 
 Automatic speech defaults to off. Installation/configuration does not toggle
 existing runtime mode or voice selection. Ryan is the default voice; select it
@@ -73,7 +87,7 @@ configured. The existing leader is unchanged.
 ## Pipeline and failures
 
 ```text
-Assistant text → local LLM speech normalization
+Assistant text → optional local LLM speech normalization
 → Piper --output-raw → pw-play --raw → speakers/headphones
 ```
 
