@@ -267,7 +267,10 @@ export default Plugin.define({
     const api = createApi(context, kv);
 
     const sttCommands = registerSTT(api, kv, complete, prompts, options, logger);
-    const ttsCommands = registerTTS(api, kv, complete, prompts, logger);
+    const speechCleanups = [];
+    const ttsCommands = registerTTS(api, kv, complete, prompts, logger, options, (cleanup) =>
+      speechCleanups.push(cleanup),
+    );
 
     context.keymap.layer(() => ({
       mode: "global",
@@ -280,6 +283,7 @@ export default Plugin.define({
     // scoped by the host, so they are detached here (hot reloads, TUI close).
     return () => {
       disposeRecording(logger);
+      for (const cleanup of speechCleanups) cleanup();
       api.event.dispose();
     };
   },

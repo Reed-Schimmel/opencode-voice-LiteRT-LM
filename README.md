@@ -26,6 +26,10 @@ Whisper and existing transcription APIs remain supported; their defaults are unc
 
 ## Install
 
+For native PipeWire speech output with Piper Ryan high, see
+[the Piper/PipeWire setup guide](docs/piper-pipewire.md). SoX remains the default
+playback backend for existing configurations.
+
 Add to `~/.config/opencode/cli.json` (create it if it doesn't exist; this is a
 TUI-only plugin, so the server-side `opencode.json` cannot load it). You must
 configure at least `endpoint` and `model`:
