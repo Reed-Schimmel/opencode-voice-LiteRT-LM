@@ -38,7 +38,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import { Plugin } from "@opencode/plugin/tui";
-import { registerSTT } from "./lib/stt.js";
+import { disposeRecording, registerSTT } from "./lib/stt.js";
 import { registerTTS } from "./lib/tts.js";
 import { createClient } from "./lib/llm-client.js";
 import { createLogger } from "./lib/logger.js";
@@ -273,6 +273,9 @@ export default Plugin.define({
 
     // The keymap layer is removed with the plugin; data listeners are not
     // scoped by the host, so they are detached here (hot reloads, TUI close).
-    return () => api.event.dispose();
+    return () => {
+      disposeRecording(logger);
+      api.event.dispose();
+    };
   },
 });

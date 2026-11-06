@@ -12,6 +12,12 @@ spoken aloud via Piper TTS. Both directions use an LLM to normalize text for
 natural speech (fixing homophones, splitting camelCase identifiers, summarizing
 code-heavy responses, etc.).
 
+### Gemma transcription through LiteRT-LM
+
+This fork supports an optional multimodal chat audio backend with `sttBackend:
+"chat"`. See [Gemma audio configuration and limits](docs/litert-audio.md).
+Whisper and existing transcription APIs remain supported; their defaults are unchanged.
+
 ## Install
 
 Add to `~/.config/opencode/cli.json` (create it if it doesn't exist; this is a

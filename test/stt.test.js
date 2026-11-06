@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildAudioHint,
+  buildCaptureCommand,
   buildOpenRouterTranscriptionRequest,
   buildRecordArgs,
   buildWhisperArgs,
@@ -72,6 +73,54 @@ test("builds sox record args per audio backend", () => {
   ]);
   assert.deepEqual(buildRecordArgs("coreaudio", null), ["-d"]);
   assert.deepEqual(buildRecordArgs("default", null), ["-d"]);
+});
+
+test("native PipeWire capture needs no SoX and records the plugin WAV format", () => {
+  assert.deepEqual(
+    buildCaptureCommand("pulseaudio", null, "/fixture/audio.wav", { sttRecorder: "pipewire" }),
+    {
+      command: "pw-record",
+      args: ["--rate", "16000", "--channels", "1", "--format", "s16", "/fixture/audio.wav"],
+    },
+  );
+  const named = buildCaptureCommand("pulseaudio", "fixture-mic", "/fixture/audio.wav", {
+    sttRecorder: "pipewire",
+    trimSilence: true,
+  });
+  assert.deepEqual(named.args.slice(0, 2), ["--target", "fixture-mic"]);
+  assert.equal(named.args.includes("silence"), false);
+  assert.throws(
+    () => buildCaptureCommand("default", null, "audio.wav", { sttRecorder: "invalid" }),
+    /sttRecorder/,
+  );
+});
+
+test("SoX remains the default recorder with unchanged silence trimming", () => {
+  assert.deepEqual(buildCaptureCommand("pulseaudio", null, "/fixture/audio.wav"), {
+    command: "sox",
+    args: [
+      "-t",
+      "pulseaudio",
+      "default",
+      "-r",
+      "16000",
+      "-c",
+      "1",
+      "-b",
+      "16",
+      "/fixture/audio.wav",
+      "silence",
+      "1",
+      "0.1",
+      "1%",
+    ],
+  });
+  assert.equal(
+    buildCaptureCommand("default", null, "audio.wav", { trimSilence: false }).args.includes(
+      "silence",
+    ),
+    false,
+  );
 });
 
 test("builds audio hints per backend and server state", () => {
