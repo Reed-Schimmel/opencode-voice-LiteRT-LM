@@ -40,17 +40,25 @@ copy only, outside any automatically discovered `plugins/` directory.
         "sttNormalize": false,
         "sttMaxTokens": 512,
         "sttTimeoutMs": 60000,
-        "tmpDir": "/absolute/path/to/private/voice-temp"
+        "tmpDir": "/absolute/path/to/private/voice-temp",
+        "keybinds": {
+          "stt.record": "<leader>k",
+          "stt.submit": "none",
+          "tts.speak-last": "<leader>j"
+        }
       }
     }
   ]
 }
 ```
 
-**Shortcut compatibility is a separate change.** This transcription backend does
-not yet fix upstream's conflicting keyboard defaults. This fragment is not an
-instruction to disable session rename or change the leader key. Use slash commands
-until plugin-level binding options have been added and verified in the actual TUI.
+**Shortcut compatibility comes from a separate commit**, now included in this
+fork. Plugin-level binding options in the fragment above avoid conflicts with
+session rename, redo, and status without changing the global leader. With the
+default Ctrl+X leader, use Ctrl+X then K to record/review and Ctrl+X then J to read
+the latest response. The direct-submit shortcut is disabled, but `/stt-submit`
+remains available. Verify keyboard dispatch in the actual TUI after `/reload`;
+slash commands remain a fallback.
 
 ## Native PipeWire capture
 
