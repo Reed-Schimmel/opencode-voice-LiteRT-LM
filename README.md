@@ -12,6 +12,12 @@ spoken aloud via Piper TTS. Both directions use an LLM to normalize text for
 natural speech (fixing homophones, splitting camelCase identifiers, summarizing
 code-heavy responses, etc.).
 
+### Local transcription A/B test
+
+To compare Gemma 4 audio transcription through LiteRT-LM with Whisper.cpp on the
+same recording, see [the standalone A/B test guide](docs/transcription-ab.md).
+It does not change OpenCode settings or install the plugin.
+
 ### Gemma transcription through LiteRT-LM
 
 This fork supports an optional multimodal chat audio backend with `sttBackend:
